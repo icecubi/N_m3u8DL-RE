@@ -1,6 +1,8 @@
-﻿using N_m3u8DL_RE.Common.Log;
+﻿using N_m3u8DL_RE.Common.Enum;
+using N_m3u8DL_RE.Common.Log;
 using N_m3u8DL_RE.Entity;
 using N_m3u8DL_RE.Enum;
+using System.Net;
 
 namespace N_m3u8DL_RE.CommandLine
 {
@@ -35,6 +37,10 @@ namespace N_m3u8DL_RE.CommandLine
         /// </summary>
         public LogLevel LogLevel { get; set; }
         /// <summary>
+        /// See: <see cref="CommandInvoker.NoDateInfo"/>.
+        /// </summary>
+        public bool NoDateInfo { get; set; }
+        /// <summary>
         /// See: <see cref="CommandInvoker.AutoSelect"/>.
         /// </summary>
         public bool AutoSelect { get; set; }
@@ -50,6 +56,14 @@ namespace N_m3u8DL_RE.CommandLine
         /// See: <see cref="CommandInvoker.DownloadRetryCount"/>.
         /// </summary>
         public int DownloadRetryCount { get; set; }
+        /// <summary>
+        /// See: <see cref="CommandInvoker.LiveRecordLimit"/>.
+        /// </summary>
+        public TimeSpan? LiveRecordLimit { get; set; }
+        /// <summary>
+        /// See: <see cref="CommandInvoker.TaskStartAt"/>.
+        /// </summary>
+        public DateTime? TaskStartAt { get; set; }
         /// <summary>
         /// See: <see cref="CommandInvoker.SkipMerge"/>.
         /// </summary>
@@ -107,6 +121,22 @@ namespace N_m3u8DL_RE.CommandLine
         /// </summary>
         public bool ConcurrentDownload { get; set; }
         /// <summary>
+        /// See: <see cref="CommandInvoker.LiveRealTimeMerge"/>.
+        /// </summary>
+        public bool LiveRealTimeMerge { get; set; }
+        /// <summary>
+        /// See: <see cref="CommandInvoker.LiveKeepSegments"/>.
+        /// </summary>
+        public bool LiveKeepSegments { get; set; }
+        /// <summary>
+        /// See: <see cref="CommandInvoker.LivePerformAsVod"/>.
+        /// </summary>
+        public bool LivePerformAsVod { get; set; }
+        /// <summary>
+        /// See: <see cref="CommandInvoker.UseSystemProxy"/>.
+        /// </summary>
+        public bool UseSystemProxy { get; set; }
+        /// <summary>
         /// See: <see cref="CommandInvoker.SubtitleFormat"/>.
         /// </summary>
         public SubtitleFormat SubtitleFormat { get; set; }
@@ -151,13 +181,46 @@ namespace N_m3u8DL_RE.CommandLine
         /// </summary>
         public StreamFilter? VideoFilter { get; set; }
         /// <summary>
+        /// See: <see cref="CommandInvoker.DropVideoFilter"/>.
+        /// </summary>
+        public StreamFilter? DropVideoFilter { get; set; }
+        /// <summary>
         /// See: <see cref="CommandInvoker.AudioFilter"/>.
         /// </summary>
         public StreamFilter? AudioFilter { get; set; }
         /// <summary>
+        /// See: <see cref="CommandInvoker.DropAudioFilter"/>.
+        /// </summary>
+        public StreamFilter? DropAudioFilter { get; set; }
+        /// <summary>
         /// See: <see cref="CommandInvoker.SubtitleFilter"/>.
         /// </summary>
         public StreamFilter? SubtitleFilter { get; set; }
+        /// <summary>
+        /// See: <see cref="CommandInvoker.DropSubtitleFilter"/>.
+        /// </summary>
+        public StreamFilter? DropSubtitleFilter { get; set; }
+        /// <summary>
+        /// See: <see cref="CommandInvoker.CustomHLSMethod"/>.
+        /// </summary>
+        public EncryptMethod? CustomHLSMethod { get; set; }
+        /// <summary>
+        /// See: <see cref="CommandInvoker.CustomHLSKey"/>.
+        /// </summary>
+        public byte[]? CustomHLSKey { get; set; }
+        /// <summary>
+        /// See: <see cref="CommandInvoker.CustomHLSIv"/>.
+        /// </summary>
+        public byte[]? CustomHLSIv { get; set; }
+        /// <summary>
+        /// See: <see cref="CommandInvoker.CustomProxy"/>.
+        /// </summary>
+        public WebProxy? CustomProxy { get; set; }
+        /// <summary>
+        /// See: <see cref="CommandInvoker.LiveWaitTime"/>.
+        /// </summary>
+        public int? LiveWaitTime { get; set; }
         public bool MuxKeepFiles { get; set; }
+        //public bool LiveWriteHLS { get; set; } = true;
     }
 }

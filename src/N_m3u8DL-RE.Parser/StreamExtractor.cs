@@ -5,11 +5,14 @@ using N_m3u8DL_RE.Common.Resource;
 using N_m3u8DL_RE.Parser.Constants;
 using N_m3u8DL_RE.Parser.Extractor;
 using N_m3u8DL_RE.Common.Util;
+using N_m3u8DL_RE.Common.Enum;
+using Spectre.Console;
 
 namespace N_m3u8DL_RE.Parser
 {
     public class StreamExtractor
     {
+        public ExtractorType ExtractorType { get => extractor.ExtractorType; }
         private IExtractor extractor;
         private ParserConfig parserConfig = new ParserConfig();
         private string rawText;
@@ -32,10 +35,11 @@ namespace N_m3u8DL_RE.Parser
             {
                 var uri = new Uri(url);
                 this.rawText = File.ReadAllText(uri.LocalPath);
-                parserConfig.Url = url;
+                parserConfig.OriginalUrl = parserConfig.Url = url;
             }
             else if (url.StartsWith("http"))
             {
+                parserConfig.OriginalUrl = url;
                 (this.rawText, url) = HTTPUtil.GetWebSourceAndNewUrlAsync(url, parserConfig.Headers).Result;
                 parserConfig.Url = url;
             }
@@ -43,7 +47,7 @@ namespace N_m3u8DL_RE.Parser
             {
                 url = Path.GetFullPath(url);
                 this.rawText = File.ReadAllText(url);
-                parserConfig.Url = new Uri(url).AbsoluteUri;
+                parserConfig.OriginalUrl = parserConfig.Url = new Uri(url).AbsoluteUri;
             }
             this.rawText = rawText.Trim();
             LoadSourceFromText(this.rawText);
@@ -63,6 +67,17 @@ namespace N_m3u8DL_RE.Parser
                 Logger.InfoMarkUp(ResString.matchDASH);
                 //extractor = new DASHExtractor(parserConfig);
                 extractor = new DASHExtractor2(parserConfig);
+            }
+            else if (rawText.Contains("</SmoothStreamingMedia>") && rawText.Contains("<SmoothStreamingMedia"))
+            {
+                Logger.InfoMarkUp(ResString.matchMSS);
+                //extractor = new DASHExtractor(parserConfig);
+                extractor = new MSSExtractor(parserConfig);
+            }
+            else if (rawText == ResString.ReLiveTs)
+            {
+                Logger.InfoMarkUp(ResString.matchTS);
+                extractor = new LiveTSExtractor(parserConfig);
             }
             else
             {
@@ -99,6 +114,34 @@ namespace N_m3u8DL_RE.Parser
                 await semaphore.WaitAsync();
                 Logger.Info(ResString.parsingStream);
                 await extractor.FetchPlayListAsync(streamSpecs);
+            }
+            finally
+            {
+                semaphore.Release();
+            }
+        }
+
+        public async Task RefreshPlayListAsync(List<StreamSpec> streamSpecs)
+        {
+            try
+            {
+                await semaphore.WaitAsync();
+                int retryCount = 3; //增加重试
+            reGet:
+                try
+                {
+                    await extractor.RefreshPlayListAsync(streamSpecs);
+                }
+                catch (Exception ex)
+                {
+                    if (retryCount-- > 0)
+                    {
+                        Logger.WarnMarkUp($"[grey]Refresh Exception: {ex.Message.EscapeMarkup()} retryCount: {retryCount}[/]");
+                        await Task.Delay(300);
+                        goto reGet;
+                    }
+                    else throw;
+                }
             }
             finally
             {

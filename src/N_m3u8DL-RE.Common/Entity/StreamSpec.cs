@@ -17,6 +17,9 @@ namespace N_m3u8DL_RE.Common.Entity
         public string? Name { get; set; }
         public Choise? Default { get; set; }
 
+        //MSS信息
+        public MSSData? MSSData { get; set; }
+
         //基本信息
         public int? Bandwidth { get; set; }
         public string? Codecs { get; set; }
@@ -29,6 +32,8 @@ namespace N_m3u8DL_RE.Common.Entity
         public string? VideoRange { get; set; }
         //补充信息-特征
         public string? Characteristics { get; set; }
+        //发布时间（仅MPD需要）
+        public DateTime? PublishTime { get; set; }
 
         //外部轨道GroupId (后续寻找对应轨道信息)
         public string? AudioId { get; set; }
@@ -37,9 +42,25 @@ namespace N_m3u8DL_RE.Common.Entity
 
         public string? PeriodId { get; set; }
 
+        /// <summary>
+        /// URL
+        /// </summary>
         public string Url { get; set; }
 
+        /// <summary>
+        /// 原始URL
+        /// </summary>
+        public string OriginalUrl { get; set; }
+
         public Playlist? Playlist { get; set; }
+
+        public int SegmentsCount
+        {
+            get
+            {
+                return Playlist != null ? Playlist.MediaParts.Sum(x => x.MediaSegments.Count) : 0;
+            }
+        }
 
         public string ToShortString()
         {
@@ -80,8 +101,7 @@ namespace N_m3u8DL_RE.Common.Entity
             var prefixStr = "";
             var returnStr = "";
             var encStr = string.Empty;
-            var segmentsCount = Playlist != null ? Playlist.MediaParts.Sum(x => x.MediaSegments.Count) : 0;
-            var segmentsCountStr = segmentsCount == 0 ? "" : (segmentsCount > 1 ? $"{segmentsCount} Segments" : $"{segmentsCount} Segment");
+            var segmentsCountStr = SegmentsCount == 0 ? "" : (SegmentsCount > 1 ? $"{SegmentsCount} Segments" : $"{SegmentsCount} Segment");
 
             //增加加密标志
             if (Playlist != null && Playlist.MediaParts.Any(m => m.MediaSegments.Any(s => s.EncryptInfo.Method != EncryptMethod.NONE)))

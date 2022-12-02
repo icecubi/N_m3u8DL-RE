@@ -9,6 +9,8 @@ namespace N_m3u8DL_RE.Parser.Config
     {
         public string Url { get; set; }
 
+        public string OriginalUrl { get; set; }
+
         public string BaseUrl { get; set; }
 
         public Dictionary<string, string> Headers { get; set; } = new Dictionary<string, string>();
@@ -57,5 +59,10 @@ namespace N_m3u8DL_RE.Parser.Config
         /// 此参数将会传递给URL Processor中
         /// </summary>
         public string? UrlProcessorArgs { get; set; }
+
+        /// <summary>
+        /// KEY重试次数
+        /// </summary>
+        public int KeyRetryCount { get; set; } = 3;
     }
 }

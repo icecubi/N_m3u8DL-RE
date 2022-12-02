@@ -9,16 +9,15 @@
 	<IlcTrimMetadata>true</IlcTrimMetadata>
 	<IlcGenerateStackTraceData>true</IlcGenerateStackTraceData>
 	<SatelliteResourceLanguages>zh-CN;zh-TW;en-US</SatelliteResourceLanguages>
-    <NativeAotCompilerVersion>7.0.0-*</NativeAotCompilerVersion>
+	  <PublishAot>true</PublishAot>
+	  <StripSymbols>true</StripSymbols>
+	  <ObjCopyName Condition="'$(RuntimeIdentifier)' == 'linux-arm64'">aarch64-linux-gnu-objcopy</ObjCopyName>
   </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Microsoft.DotNet.ILCompiler" Version="$(NativeAotCompilerVersion)" />
-    <!-- Cross-compilation for Windows x64-arm64 and Linux x64-arm64 -->
-    <PackageReference Condition="'$(RuntimeIdentifier)'=='win-arm64'" Include="runtime.win-x64.Microsoft.DotNet.ILCompiler" Version="$(NativeAotCompilerVersion)" />
-    <PackageReference Condition="'$(RuntimeIdentifier)'=='linux-arm64'" Include="runtime.linux-x64.Microsoft.DotNet.ILCompiler" Version="$(NativeAotCompilerVersion)" />
-  </ItemGroup>
-
+	<ItemGroup Condition="'$(PublishAot)' == 'true' and '$(RuntimeIdentifier)' != 'win-arm64' and '$(RuntimeIdentifier)' != 'linux-arm64'">
+		<PackageReference Include="PublishAotCompressed" Version="0.0.4" />
+	</ItemGroup>
+	
   <ItemGroup>
     <RdXmlFile Include="rd.xml" />
   </ItemGroup>

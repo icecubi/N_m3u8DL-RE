@@ -9,7 +9,7 @@ using N_m3u8DL_RE.Common.Enum;
 
 namespace N_m3u8DL_RE.Parser.Extractor
 {
-    internal interface IExtractor
+    public interface IExtractor
     {
         ExtractorType ExtractorType { get; }
 
@@ -18,6 +18,7 @@ namespace N_m3u8DL_RE.Parser.Extractor
         Task<List<StreamSpec>> ExtractStreamsAsync(string rawText);
 
         Task FetchPlayListAsync(List<StreamSpec> streamSpecs);
+        Task RefreshPlayListAsync(List<StreamSpec> streamSpecs);
 
         string PreProcessUrl(string url);
 

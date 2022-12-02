@@ -12,13 +12,15 @@ namespace N_m3u8DL_RE.Parser.Processor.HLS
 {
     public partial class DefaultHLSContentProcessor : ContentProcessor
     {
-        [RegexGenerator("#EXT-X-DISCONTINUITY\\s+#EXT-X-MAP:URI=\\\"(.*?)\\\",BYTERANGE=\\\"(.*?)\\\"")]
+        [GeneratedRegex("#EXT-X-DISCONTINUITY\\s+#EXT-X-MAP:URI=\\\"(.*?)\\\",BYTERANGE=\\\"(.*?)\\\"")]
         private static partial Regex YkDVRegex();
-        [RegexGenerator("#EXT-X-MAP:URI=\\\".*?BUMPER/[\\s\\S]+?#EXT-X-DISCONTINUITY")]
+        [GeneratedRegex("#EXT-X-MAP:URI=\\\".*?BUMPER/[\\s\\S]+?#EXT-X-DISCONTINUITY")]
         private static partial Regex DNSPRegex();
-        [RegexGenerator("(#EXTINF.*)(\\s+)(#EXT-X-KEY.*)")]
+        [GeneratedRegex("#EXTINF:.*?,\\s+.*BUMPER.*\\s+?#EXT-X-DISCONTINUITY")]
+        private static partial Regex DNSPSubRegex();
+        [GeneratedRegex("(#EXTINF.*)(\\s+)(#EXT-X-KEY.*)")]
         private static partial Regex OrderFixRegex();
-        [RegexGenerator("#EXT-X-MAP.*\\.apple\\.com/")]
+        [GeneratedRegex("#EXT-X-MAP.*\\.apple\\.com/")]
         private static partial Regex ATVRegex();
 
         public override bool CanProcess(ExtractorType extractorType, string rawText, ParserConfig parserConfig) => extractorType == ExtractorType.HLS;
@@ -58,6 +60,16 @@ namespace N_m3u8DL_RE.Parser.Processor.HLS
             if (m3u8Content.Contains("#EXT-X-DISCONTINUITY") && m3u8Content.Contains("#EXT-X-MAP") && m3u8Url.Contains("media.dssott.com/"))
             {
                 Regex ykmap = DNSPRegex();
+                if (ykmap.IsMatch(m3u8Content))
+                {
+                    m3u8Content = m3u8Content.Replace(ykmap.Match(m3u8Content).Value, "#XXX");
+                }
+            }
+
+            //针对Disney+字幕修正
+            if (m3u8Content.Contains("#EXT-X-DISCONTINUITY") && m3u8Content.Contains("seg_00000.vtt") && m3u8Url.Contains("media.dssott.com/"))
+            {
+                Regex ykmap = DNSPSubRegex();
                 if (ykmap.IsMatch(m3u8Content))
                 {
                     m3u8Content = m3u8Content.Replace(ykmap.Match(m3u8Content).Value, "#XXX");

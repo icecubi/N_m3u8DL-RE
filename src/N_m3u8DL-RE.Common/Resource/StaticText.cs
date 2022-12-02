@@ -10,6 +10,24 @@ namespace N_m3u8DL_RE.Common.Resource
     {
         public static Dictionary<string, TextContainer> LANG_DIC = new()
         {
+            ["processImageSub"] = new TextContainer
+            (
+                zhCN: "正在处理图形字幕",
+                zhTW: "正在處理圖形字幕",
+                enUS: "Processing Image Sub"
+            ),
+            ["newVersionFound"] = new TextContainer
+            (
+                zhCN: "检测到新版本，请尽快升级！",
+                zhTW: "檢測到新版本，請盡快升級！",
+                enUS: "New version detected!"
+            ),
+            ["taskStartAt"] = new TextContainer
+            (
+                zhCN: "程序将等待，直到：",
+                zhTW: "程序將等待，直到：",
+                enUS: "The program will wait until: "
+            ),
             ["autoBinaryMerge"] = new TextContainer
             (
                 zhCN: "检测到fMP4，自动开启二进制合并",
@@ -63,6 +81,12 @@ namespace N_m3u8DL_RE.Common.Resource
                 zhCN: "设置BaseURL",
                 zhTW: "設置BaseURL",
                 enUS: "Set BaseURL"
+            ),
+            ["cmd_noDateInfo"] = new TextContainer
+            (
+                zhCN: "混流时不写入日期信息",
+                zhTW: "混流時不寫入日期訊息",
+                enUS: "Date information is not written during muxing"
             ),
             ["cmd_appendUrlParams"] = new TextContainer
             (
@@ -226,16 +250,88 @@ namespace N_m3u8DL_RE.Common.Resource
                 zhTW: "設置UI語言",
                 enUS: "Set UI language"
             ),
+            ["cmd_moreHelp"] = new TextContainer
+            (
+                zhCN: "查看某个选项的详细帮助信息",
+                zhTW: "查看某個選項的詳細幫助訊息",
+                enUS: "Set more help info about one option"
+            ),
             ["cmd_urlProcessorArgs"] = new TextContainer
             (
                 zhCN: "此字符串将直接传递给URL Processor",
                 zhTW: "此字符串將直接傳遞給URL Processor",
                 enUS: "Give these arguments to the URL Processors."
             ),
+            ["cmd_liveRealTimeMerge"] = new TextContainer
+            (
+                zhCN: "录制直播时实时合并",
+                zhTW: "錄製直播時即時合併",
+                enUS: "Real-time merge into file when recording live"
+            ),
+            ["cmd_customProxy"] = new TextContainer
+            (
+                zhCN: "设置请求代理, 如 http://127.0.0.1:8888",
+                zhTW: "設置請求代理, 如 http://127.0.0.1:8888",
+                enUS: "Set web request proxy, like http://127.0.0.1:8888"
+            ),
+            ["cmd_useSystemProxy"] = new TextContainer
+            (
+                zhCN: "使用系统默认代理",
+                zhTW: "使用系統默認代理",
+                enUS: "Use system default proxy"
+            ),
+            ["cmd_livePerformAsVod"] = new TextContainer
+            (
+                zhCN: "以点播方式下载直播流",
+                zhTW: "以點播方式下載直播流",
+                enUS: "Download live streams as vod"
+            ),
+            ["cmd_liveWaitTime"] = new TextContainer
+            (
+                zhCN: "手动设置直播列表刷新间隔",
+                zhTW: "手動設置直播列表刷新間隔",
+                enUS: "Manually set the live playlist refresh interval"
+            ),
+            ["cmd_customHLSMethod"] = new TextContainer
+            (
+                zhCN: "指定HLS加密方式 (AES_128|AES_128_ECB|CENC|CHACHA20|NONE|SAMPLE_AES|SAMPLE_AES_CTR|UNKNOWN)",
+                zhTW: "指定HLS加密方式 (AES_128|AES_128_ECB|CENC|CHACHA20|NONE|SAMPLE_AES|SAMPLE_AES_CTR|UNKNOWN)",
+                enUS: "Set HLS encryption method (AES_128|AES_128_ECB|CENC|CHACHA20|NONE|SAMPLE_AES|SAMPLE_AES_CTR|UNKNOWN)"
+            ),
+            ["cmd_customHLSKey"] = new TextContainer
+            (
+                zhCN: "指定HLS解密KEY. 可以是文件, HEX或Base64",
+                zhTW: "指定HLS解密KEY. 可以是文件, HEX或Base64",
+                enUS: "Set the HLS decryption key. Can be file, HEX or Base64"
+            ),
+            ["cmd_customHLSIv"] = new TextContainer
+            (
+                zhCN: "指定HLS解密IV. 可以是文件, HEX或Base64",
+                zhTW: "指定HLS解密IV. 可以是文件, HEX或Base64",
+                enUS: "Set the HLS decryption iv. Can be file, HEX or Base64"
+            ),
+            ["cmd_liveKeepSegments"] = new TextContainer
+            (
+                zhCN: "录制直播并开启实时合并时依然保留分片",
+                zhTW: "錄製直播並開啟即時合併時依然保留分片",
+                enUS: "Keep segments when recording a live (liveRealTimeMerge enabled)"
+            ),
+            ["cmd_liveRecordLimit"] = new TextContainer
+            (
+                zhCN: "录制直播时的录制时长限制",
+                zhTW: "錄製直播時的錄製時長限制",
+                enUS: "Recording time limit when recording live"
+            ),
+            ["cmd_taskStartAt"] = new TextContainer
+            (
+                zhCN: "在此时间之前不会开始执行任务",
+                zhTW: "在此時間之前不會開始執行任務",
+                enUS: "Task execution will not start before this time"
+            ),
             ["cmd_useShakaPackager"] = new TextContainer
             (
                 zhCN: "解密时使用shaka-packager替代mp4decrypt",
-                zhTW: "解密时使用shaka-packager替代mp4decrypt",
+                zhTW: "解密時使用shaka-packager替代mp4decrypt",
                 enUS: "Use shaka-packager instead of mp4decrypt to decrypt"
             ),
             ["cmd_concurrentDownload"] = new TextContainer
@@ -246,9 +342,21 @@ namespace N_m3u8DL_RE.Common.Resource
             ),
             ["cmd_selectVideo"] = new TextContainer
             (
+                zhCN: "通过正则表达式选择符合要求的视频流. 输入 \"--morehelp select-video\" 以查看详细信息",
+                zhTW: "通過正則表達式選擇符合要求的影片軌. 輸入 \"--morehelp select-video\" 以查看詳細訊息",
+                enUS: "Select video streams by regular expressions. Use \"--morehelp select-video\" for more details"
+            ),
+            ["cmd_dropVideo"] = new TextContainer
+            (
+                zhCN: "通过正则表达式去除符合要求的视频流.",
+                zhTW: "通過正則表達式去除符合要求的影片串流.",
+                enUS: "Drop video streams by regular expressions."
+            ),
+            ["cmd_selectVideo_more"] = new TextContainer
+            (
                 zhCN: "通过正则表达式选择符合要求的视频流. 你能够以:分隔形式指定如下参数:\r\n\r\n" +
-                      "id=REGEX:lang=REGEX:name=REGEX:codec=REGEX:res=REGEX\r\n" +
-                      "frame=REGEX:ch=REGEX:range=REGEX:url=REGEX:for=FOR\r\n\r\n" +
+                      "id=REGEX:lang=REGEX:name=REGEX:codec=REGEX:res=REGEX:frame=REGEX\r\n" +
+                      "segsMin=number:segsMax=number:ch=REGEX:range=REGEX:url=REGEX:for=FOR\r\n\r\n" +
                       "* for=FOR: 选择方式. best[number], worst[number], all (默认: best)\r\n\r\n" +
                       "例如: \r\n" +
                       "# 选择最佳视频\r\n" +
@@ -275,6 +383,18 @@ namespace N_m3u8DL_RE.Common.Resource
                       "-sv res=\"3840*\":codec=hvc1:for=best\r\n"
             ),
             ["cmd_selectAudio"] = new TextContainer
+            (
+                zhCN: "通过正则表达式选择符合要求的音频流. 输入 \"--morehelp select-audio\" 以查看详细信息",
+                zhTW: "通過正則表達式選擇符合要求的音軌. 輸入 \"--morehelp select-audio\" 以查看詳細訊息",
+                enUS: "Select audio streams by regular expressions. Use \"--morehelp select-audio\" for more details"
+            ),
+            ["cmd_dropAudio"] = new TextContainer
+            (
+                zhCN: "通过正则表达式去除符合要求的音频流.",
+                zhTW: "通過正則表達式去除符合要求的音軌.",
+                enUS: "Drop audio streams by regular expressions."
+            ),
+            ["cmd_selectAudio_more"] = new TextContainer
             (
                 zhCN: "通过正则表达式选择符合要求的音频流. 参考 --select-video\r\n\r\n" +
                       "例如: \r\n" +
@@ -303,6 +423,18 @@ namespace N_m3u8DL_RE.Common.Resource
             ),
             ["cmd_selectSubtitle"] = new TextContainer
             (
+                zhCN: "通过正则表达式选择符合要求的字幕流. 输入 \"--morehelp select-subtitle\" 以查看详细信息",
+                zhTW: "通過正則表達式選擇符合要求的字幕流. 輸入 \"--morehelp select-subtitle\" 以查看詳細訊息",
+                enUS: "Select subtitle streams by regular expressions. Use \"--morehelp select-subtitle\" for more details"
+            ),
+            ["cmd_dropSubtitle"] = new TextContainer
+            (
+                zhCN: "通过正则表达式去除符合要求的字幕流.",
+                zhTW: "通過正則表達式去除符合要求的字幕流.",
+                enUS: "Drop subtitle streams by regular expressions."
+            ),
+            ["cmd_selectSubtitle_more"] = new TextContainer
+            (
                 zhCN: "通过正则表达式选择符合要求的字幕流. 参考 --select-video\r\n\r\n" +
                       "例如: \r\n" +
                       "# 选择所有字幕\r\n" +
@@ -322,7 +454,7 @@ namespace N_m3u8DL_RE.Common.Resource
                       "# select all subs containing \"English\"\r\n" +
                       "-ss name=\"English\":for=all\r\n"
             ),
-            ["cmd_muxAfterDone"] = new TextContainer
+            ["cmd_muxAfterDone_more"] = new TextContainer
             (
                 zhCN: "所有工作完成时尝试混流分离的音视频. 你能够以:分隔形式指定如下参数:\r\n\r\n" +
                       "* format=FORMAT: 指定混流容器 mkv, mp4\r\n" +
@@ -361,7 +493,19 @@ namespace N_m3u8DL_RE.Common.Resource
                       "# use mkvmerge, set bin path\r\n" +
                       "-M format=mkv:muxer=mkvmerge:bin_path=\"C\\:\\Program Files\\MKVToolNix\\mkvmerge.exe\"\r\n"
             ),
+            ["cmd_muxAfterDone"] = new TextContainer
+            (
+                zhCN: "所有工作完成时尝试混流分离的音视频. 输入 \"--morehelp mux-after-done\" 以查看详细信息",
+                zhTW: "所有工作完成時嘗試混流分離的影音. 輸入 \"--morehelp mux-after-done\" 以查看詳細訊息",
+                enUS: "When all works is done, try to mux the downloaded streams. Use \"--morehelp mux-after-done\" for more details"
+            ),
             ["cmd_muxImport"] = new TextContainer
+            (
+                zhCN: "混流时引入外部媒体文件. 输入 \"--morehelp mux-import\" 以查看详细信息",
+                zhTW: "混流時引入外部媒體檔案. 輸入 \"--morehelp mux-import\" 以查看詳細訊息",
+                enUS: "When MuxAfterDone enabled, allow to import local media files. Use \"--morehelp mux-import\" for more details"
+            ),
+            ["cmd_muxImport_more"] = new TextContainer
             (
                 zhCN: "混流时引入外部媒体文件. 你能够以:分隔形式指定如下参数:\r\n\r\n" +
                       "* path=PATH: 指定媒体文件路径\r\n" +
@@ -396,6 +540,30 @@ namespace N_m3u8DL_RE.Common.Resource
                 zhCN: "解析后的信息是否输出json文件",
                 zhTW: "解析後的訊息是否輸出json文件",
                 enUS: "Write meta json after parsed"
+            ),
+            ["liveLimit"] = new TextContainer
+            (
+                zhCN: "本次直播录制时长上限: ",
+                zhTW: "本次直播錄製時長上限: ",
+                enUS: "Live recording duration limit: "
+            ),
+            ["realTimeDecMessage"] = new TextContainer
+            (
+                zhCN: "启用实时解密时，建议用shaka-packager而非mp4decrypt",
+                zhTW: "啟用即時解密時，建議用shaka-packager而非mp4decrypt",
+                enUS: "When enabling real-time decryption, it is recommended to use shaka-packager instead of mp4decrypt"
+            ),
+            ["liveLimitReached"] = new TextContainer
+            (
+                zhCN: "到达直播录制上限，即将停止录制",
+                zhTW: "到達直播錄製上限，即將停止錄製",
+                enUS: "Live recording limit reached, will stop recording soon"
+            ),
+            ["saveName"] = new TextContainer
+            (
+                zhCN: "保存文件名: ",
+                zhTW: "保存檔案名: ",
+                enUS: "Save Name: "
             ),
             ["fetch"] = new TextContainer
             (
@@ -463,17 +631,35 @@ namespace N_m3u8DL_RE.Common.Resource
                 zhTW: "檢測到Master列表，開始解析全部流訊息",
                 enUS: "Master List detected, try parse all streams"
             ),
+            ["matchTS"] = new TextContainer
+            (
+                zhCN: "内容匹配: [white on green3]HTTP Live MPEG2-TS[/]",
+                zhTW: "內容匹配: [white on green3]HTTP Live MPEG2-TS[/]",
+                enUS: "Content Matched: [white on green3]HTTP Live MPEG2-TS[/]"
+            ),
             ["matchDASH"] = new TextContainer
             (
                 zhCN: "内容匹配: [white on mediumorchid1]Dynamic Adaptive Streaming over HTTP[/]",
                 zhTW: "內容匹配: [white on mediumorchid1]Dynamic Adaptive Streaming over HTTP[/]",
                 enUS: "Content Matched: [white on mediumorchid1]Dynamic Adaptive Streaming over HTTP[/]"
             ),
+            ["matchMSS"] = new TextContainer
+            (
+                zhCN: "内容匹配: [white on steelblue1]Microsoft Smooth Streaming[/]",
+                zhTW: "內容匹配: [white on steelblue1]Microsoft Smooth Streaming[/]",
+                enUS: "Content Matched: [white on steelblue1]Microsoft Smooth Streaming[/]"
+            ),
             ["matchHLS"] = new TextContainer
             (
                 zhCN: "内容匹配: [white on deepskyblue1]HTTP Live Streaming[/]",
                 zhTW: "內容匹配: [white on deepskyblue1]HTTP Live Streaming[/]",
                 enUS: "Content Matched: [white on deepskyblue1]HTTP Live Streaming[/]"
+            ),
+            ["partMerge"] = new TextContainer
+            (
+                zhCN: "分片数量大于1800个，开始分块合并...",
+                zhTW: "分片數量大於1800個，開始分塊合併...",
+                enUS: "Segments more than 1800, start partial merge..."
             ),
             ["notSupported"] = new TextContainer
             (

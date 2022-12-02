@@ -5,6 +5,7 @@ using N_m3u8DL_RE.Common.Resource;
 using N_m3u8DL_RE.Common.Util;
 using N_m3u8DL_RE.Parser.Config;
 using N_m3u8DL_RE.Parser.Util;
+using Spectre.Console;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -27,16 +28,26 @@ namespace N_m3u8DL_RE.Parser.Processor.HLS
             Logger.Debug("METHOD:{},URI:{},IV:{}", method, uri, iv);
 
             var encryptInfo = new EncryptInfo(method);
+
             //IV
             if (!string.IsNullOrEmpty(iv))
             {
                 encryptInfo.IV = HexUtil.HexToBytes(iv);
             }
+            //自定义IV
+            if (parserConfig.CustomeIV != null && parserConfig.CustomeIV.Length > 0) 
+            {
+                encryptInfo.IV = parserConfig.CustomeIV;
+            }
 
             //KEY
             try
             {
-                if (uri.ToLower().StartsWith("base64:"))
+                if (parserConfig.CustomeKey != null && parserConfig.CustomeKey.Length > 0)
+                {
+                    encryptInfo.Key = parserConfig.CustomeKey;
+                }
+                else if (uri.ToLower().StartsWith("base64:"))
                 {
                     encryptInfo.Key = Convert.FromBase64String(uri[7..]);
                 }
@@ -48,17 +59,40 @@ namespace N_m3u8DL_RE.Parser.Processor.HLS
                 {
                     encryptInfo.Key = Convert.FromBase64String(uri[23..]);
                 }
+                else if (File.Exists(uri))
+                {
+                    encryptInfo.Key = File.ReadAllBytes(uri);
+                }
                 else if (!string.IsNullOrEmpty(uri))
                 {
+                    var retryCount = parserConfig.KeyRetryCount;
                     var segUrl = PreProcessUrl(ParserUtil.CombineURL(m3u8Url, uri), parserConfig);
-                    var bytes = HTTPUtil.GetBytesAsync(segUrl, parserConfig.Headers).Result;
-                    encryptInfo.Key = bytes;
+                getHttpKey:
+                    try
+                    {
+                        var bytes = HTTPUtil.GetBytesAsync(segUrl, parserConfig.Headers).Result;
+                        encryptInfo.Key = bytes;
+                    }
+                    catch (Exception _ex)
+                    {
+                        Logger.WarnMarkUp($"[grey]{_ex.Message.EscapeMarkup()} retryCount: {retryCount}[/]");
+                        Thread.Sleep(1000);
+                        if (retryCount-- > 0) goto getHttpKey;
+                        else throw;
+                    }
                 }
             }
             catch (Exception ex)
             {
                 Logger.Error(ResString.cmd_loadKeyFailed + ": " + ex.Message);
                 encryptInfo.Method = EncryptMethod.UNKNOWN;
+            }
+
+            //处理自定义加密方式
+            if (parserConfig.CustomMethod != null)
+            {
+                encryptInfo.Method = parserConfig.CustomMethod.Value;
+                Logger.Warn("METHOD changed from {} to {}", method, encryptInfo.Method);
             }
 
             return encryptInfo;

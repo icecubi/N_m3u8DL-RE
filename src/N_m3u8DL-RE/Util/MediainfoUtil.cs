@@ -12,22 +12,24 @@ namespace N_m3u8DL_RE.Util
 {
     internal partial class MediainfoUtil
     {
-        [RegexGenerator(" Stream #.*")]
+        [GeneratedRegex("  Stream #.*")]
         private static partial Regex TextRegex();
-        [RegexGenerator("#0:\\d(\\[0x\\w+?\\])")]
+        [GeneratedRegex("#0:\\d(\\[0x\\w+?\\])")]
         private static partial Regex IdRegex();
-        [RegexGenerator(": (\\w+): (.*)")]
+        [GeneratedRegex(": (\\w+): (.*)")]
         private static partial Regex TypeRegex();
-        [RegexGenerator("(.*?)(,|$)")]
+        [GeneratedRegex("(.*?)(,|$)")]
         private static partial Regex BaseInfoRegex();
-        [RegexGenerator(" \\/ 0x\\w+")]
+        [GeneratedRegex(" \\/ 0x\\w+")]
         private static partial Regex ReplaceRegex();
-        [RegexGenerator("\\d{2,}x\\d+")]
+        [GeneratedRegex("\\d{2,}x\\d+")]
         private static partial Regex ResRegex();
-        [RegexGenerator("\\d+ kb\\/s")]
+        [GeneratedRegex("\\d+ kb\\/s")]
         private static partial Regex BitrateRegex();
-        [RegexGenerator("\\d+ fps")]
+        [GeneratedRegex("(\\d+(\\.\\d+)?) fps")]
         private static partial Regex FpsRegex();
+        [GeneratedRegex("DOVI configuration record.*profile: (\\d).*compatibility id: (\\d)")]
+        private static partial Regex DoViRegex();
 
         public static async Task<List<Mediainfo>> ReadInfoAsync(string binary, string file)
         {
@@ -51,7 +53,7 @@ namespace N_m3u8DL_RE.Util
             {
                 var info = new Mediainfo()
                 {
-                    Text = TypeRegex().Match(stream.Value).Groups[2].Value,
+                    Text = TypeRegex().Match(stream.Value).Groups[2].Value.TrimEnd(),
                     Id = IdRegex().Match(stream.Value).Groups[1].Value,
                     Type = TypeRegex().Match(stream.Value).Groups[1].Value,
                 };
@@ -67,6 +69,7 @@ namespace N_m3u8DL_RE.Util
                     || info.BaseInfo.Contains("dvh1")
                     || info.BaseInfo.Contains("DOVI")
                     || info.Type.Contains("dvvideo")
+                    || (DoViRegex().IsMatch(output) && info.Type == "Video")
                     )
                     info.DolbyVison = true;
 

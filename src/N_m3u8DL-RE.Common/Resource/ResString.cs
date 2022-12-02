@@ -9,6 +9,7 @@ namespace N_m3u8DL_RE.Common.Resource
 {
     public class ResString
     {
+        public readonly static string ReLiveTs = "<RE_LIVE_TS>";
         public static string autoBinaryMerge { get => GetText("autoBinaryMerge"); }
         public static string autoBinaryMerge2 { get => GetText("autoBinaryMerge2"); }
         public static string autoBinaryMerge3 { get => GetText("autoBinaryMerge3"); }
@@ -26,11 +27,22 @@ namespace N_m3u8DL_RE.Common.Resource
         public static string cmd_ffmpegBinaryPath { get => GetText("cmd_ffmpegBinaryPath"); }
         public static string cmd_mkvmergeBinaryPath { get => GetText("cmd_mkvmergeBinaryPath"); }
         public static string cmd_baseUrl { get => GetText("cmd_baseUrl"); }
+        public static string cmd_moreHelp { get => GetText("cmd_moreHelp"); }
         public static string cmd_header { get => GetText("cmd_header"); }
         public static string cmd_muxImport { get => GetText("cmd_muxImport"); }
+        public static string cmd_muxImport_more { get => GetText("cmd_muxImport_more"); }
         public static string cmd_selectVideo { get => GetText("cmd_selectVideo"); }
+        public static string cmd_dropVideo { get => GetText("cmd_dropVideo"); }
+        public static string cmd_selectVideo_more { get => GetText("cmd_selectVideo_more"); }
         public static string cmd_selectAudio { get => GetText("cmd_selectAudio"); }
+        public static string cmd_dropAudio { get => GetText("cmd_dropAudio"); }
+        public static string cmd_selectAudio_more { get => GetText("cmd_selectAudio_more"); }
         public static string cmd_selectSubtitle { get => GetText("cmd_selectSubtitle"); }
+        public static string cmd_dropSubtitle { get => GetText("cmd_dropSubtitle"); }
+        public static string cmd_selectSubtitle_more { get => GetText("cmd_selectSubtitle_more"); }
+        public static string cmd_customHLSMethod { get => GetText("cmd_customHLSMethod"); }
+        public static string cmd_customHLSKey { get => GetText("cmd_customHLSKey"); }
+        public static string cmd_customHLSIv { get => GetText("cmd_customHLSIv"); }
         public static string cmd_Input { get => GetText("cmd_Input"); }
         public static string cmd_keys { get => GetText("cmd_keys"); }
         public static string cmd_keyText { get => GetText("cmd_keyText"); }
@@ -41,6 +53,7 @@ namespace N_m3u8DL_RE.Common.Resource
         public static string cmd_saveName { get => GetText("cmd_saveName"); }
         public static string cmd_savePattern { get => GetText("cmd_savePattern"); }
         public static string cmd_skipDownload { get => GetText("cmd_skipDownload"); }
+        public static string cmd_noDateInfo { get => GetText("cmd_noDateInfo"); }
         public static string cmd_skipMerge { get => GetText("cmd_skipMerge"); }
         public static string cmd_subFormat { get => GetText("cmd_subFormat"); }
         public static string cmd_subOnly { get => GetText("cmd_subOnly"); }
@@ -52,8 +65,23 @@ namespace N_m3u8DL_RE.Common.Resource
         public static string cmd_urlProcessorArgs { get => GetText("cmd_urlProcessorArgs"); }
         public static string cmd_useShakaPackager { get => GetText("cmd_useShakaPackager"); }
         public static string cmd_concurrentDownload { get => GetText("cmd_concurrentDownload"); }
+        public static string cmd_useSystemProxy { get => GetText("cmd_useSystemProxy"); }
+        public static string cmd_customProxy { get => GetText("cmd_customProxy"); }
+        public static string cmd_liveKeepSegments { get => GetText("cmd_liveKeepSegments"); }
+        public static string cmd_liveRecordLimit { get => GetText("cmd_liveRecordLimit"); }
+        public static string cmd_taskStartAt { get => GetText("cmd_taskStartAt"); }
+        public static string cmd_liveWaitTime { get => GetText("cmd_liveWaitTime"); }
+        public static string cmd_liveRealTimeMerge { get => GetText("cmd_liveRealTimeMerge"); }
+        public static string cmd_livePerformAsVod { get => GetText("cmd_livePerformAsVod"); }
         public static string cmd_muxAfterDone { get => GetText("cmd_muxAfterDone"); }
+        public static string cmd_muxAfterDone_more { get => GetText("cmd_muxAfterDone_more"); }
         public static string cmd_writeMetaJson { get => GetText("cmd_writeMetaJson"); }
+        public static string liveLimit { get => GetText("liveLimit"); }
+        public static string realTimeDecMessage { get => GetText("realTimeDecMessage"); }
+        public static string liveLimitReached { get => GetText("liveLimitReached"); }
+        public static string saveName { get => GetText("saveName"); }
+        public static string taskStartAt { get => GetText("taskStartAt"); }
+        public static string partMerge { get => GetText("partMerge"); }
         public static string fetch { get => GetText("fetch"); }
         public static string ffmpegMerge { get => GetText("ffmpegMerge"); }
         public static string ffmpegNotFound { get => GetText("ffmpegNotFound"); }
@@ -66,6 +94,8 @@ namespace N_m3u8DL_RE.Common.Resource
         public static string loadingUrl { get => GetText("loadingUrl"); }
         public static string masterM3u8Found { get => GetText("masterM3u8Found"); }
         public static string matchDASH { get => GetText("matchDASH"); }
+        public static string matchMSS { get => GetText("matchMSS"); }
+        public static string matchTS { get => GetText("matchTS"); }
         public static string matchHLS { get => GetText("matchHLS"); }
         public static string notSupported { get => GetText("notSupported"); }
         public static string parsingStream { get => GetText("parsingStream"); }
@@ -80,6 +110,8 @@ namespace N_m3u8DL_RE.Common.Resource
         public static string streamsInfo { get => GetText("streamsInfo"); }
         public static string writeJson { get => GetText("writeJson"); }
         public static string noStreamsToDownload { get => GetText("noStreamsToDownload"); }
+        public static string newVersionFound { get => GetText("newVersionFound"); }
+        public static string processImageSub { get => GetText("processImageSub"); }
 
         private static string GetText(string key)
         {

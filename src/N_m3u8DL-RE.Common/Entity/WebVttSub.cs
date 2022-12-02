@@ -9,11 +9,11 @@ namespace N_m3u8DL_RE.Common.Entity
 {
     public partial class WebVttSub
     {
-        [RegexGenerator("X-TIMESTAMP-MAP.*")]
+        [GeneratedRegex("X-TIMESTAMP-MAP.*")]
         private static partial Regex TSMapRegex();
-        [RegexGenerator("MPEGTS:(\\d+)")]
+        [GeneratedRegex("MPEGTS:(\\d+)")]
         private static partial Regex TSValueRegex();
-        [RegexGenerator("\\s")]
+        [GeneratedRegex("\\s")]
         private static partial Regex SplitRegex();
 
         public List<SubCue> Cues { get; set; } = new List<SubCue>();
@@ -24,9 +24,9 @@ namespace N_m3u8DL_RE.Common.Entity
         /// </summary>
         /// <param name="textBytes"></param>
         /// <returns></returns>
-        public static WebVttSub Parse(byte[] textBytes)
+        public static WebVttSub Parse(byte[] textBytes, long BaseTimestamp = 0L)
         {
-            return Parse(Encoding.UTF8.GetString(textBytes));
+            return Parse(Encoding.UTF8.GetString(textBytes), BaseTimestamp);
         }
 
         /// <summary>
@@ -35,9 +35,9 @@ namespace N_m3u8DL_RE.Common.Entity
         /// <param name="textBytes"></param>
         /// <param name="encoding"></param>
         /// <returns></returns>
-        public static WebVttSub Parse(byte[] textBytes, Encoding encoding)
+        public static WebVttSub Parse(byte[] textBytes, Encoding encoding, long BaseTimestamp = 0L)
         {
-            return Parse(encoding.GetString(textBytes));
+            return Parse(encoding.GetString(textBytes), BaseTimestamp);
         }
 
         /// <summary>
@@ -45,7 +45,7 @@ namespace N_m3u8DL_RE.Common.Entity
         /// </summary>
         /// <param name="text"></param>
         /// <returns></returns>
-        public static WebVttSub Parse(string text)
+        public static WebVttSub Parse(string text, long BaseTimestamp = 0L)
         {
             if (!text.Trim().StartsWith("WEBVTT"))
                 throw new Exception("Bad vtt!");
@@ -94,6 +94,22 @@ namespace N_m3u8DL_RE.Common.Entity
                     else
                     {
                         payloads.Add(line.Trim());
+                    }
+                }
+            }
+
+            if (BaseTimestamp != 0)
+            {
+                foreach (var item in webSub.Cues)
+                {
+                    if (item.StartTime.TotalMilliseconds - BaseTimestamp >= 0)
+                    {
+                        item.StartTime = TimeSpan.FromMilliseconds(item.StartTime.TotalMilliseconds - BaseTimestamp);
+                        item.EndTime = TimeSpan.FromMilliseconds(item.EndTime.TotalMilliseconds - BaseTimestamp);
+                    }
+                    else
+                    {
+                        break;
                     }
                 }
             }
@@ -148,6 +164,11 @@ namespace N_m3u8DL_RE.Common.Entity
             }
         }
 
+        private IEnumerable<SubCue> GetCues()
+        {
+            return this.Cues.Where(c => !string.IsNullOrEmpty(c.Payload));
+        }
+
         private static TimeSpan ConvertToTS(string str)
         {
             var ms = Convert.ToInt32(str.Split('.').Last());
@@ -156,7 +177,7 @@ namespace N_m3u8DL_RE.Common.Entity
             var time = 0L + ms;
             for (int i = 0; i < t.Count(); i++)
             {
-                time += (int)Math.Pow(60, i) * Convert.ToInt32(t[i]) * 1000;
+                time += (long)Math.Pow(60, i) * Convert.ToInt32(t[i]) * 1000;
             }
             return TimeSpan.FromMilliseconds(time);
         }
@@ -164,7 +185,7 @@ namespace N_m3u8DL_RE.Common.Entity
         public override string ToString()
         {
             StringBuilder sb = new StringBuilder();
-            foreach (var c in this.Cues)
+            foreach (var c in GetCues())  //输出时去除空串
             {
                 sb.AppendLine(c.StartTime.ToString(@"hh\:mm\:ss\.fff") + " --> " + c.EndTime.ToString(@"hh\:mm\:ss\.fff") + " " + c.Settings);
                 sb.AppendLine(c.Payload);
@@ -174,9 +195,32 @@ namespace N_m3u8DL_RE.Common.Entity
             return sb.ToString();
         }
 
-        public string ToStringWithHeader()
+        public string ToVtt()
         {
             return "WEBVTT" + Environment.NewLine + Environment.NewLine + ToString();
+        }
+
+        public string ToSrt()
+        {
+            StringBuilder sb = new StringBuilder();
+            int index = 1;
+            foreach (var c in GetCues())
+            {
+                sb.AppendLine($"{index++}");
+                sb.AppendLine(c.StartTime.ToString(@"hh\:mm\:ss\,fff") + " --> " + c.EndTime.ToString(@"hh\:mm\:ss\,fff"));
+                sb.AppendLine(c.Payload);
+                sb.AppendLine();
+            }
+            sb.AppendLine();
+
+            var srt = sb.ToString();
+
+            if (string.IsNullOrEmpty(srt.Trim()))
+            {
+                srt = "1\r\n00:00:00,000 --> 00:00:01,000"; //空字幕
+            }
+
+            return srt;
         }
     }
 }

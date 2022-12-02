@@ -35,7 +35,23 @@ namespace N_m3u8DL_RE.Common.Util
             {
                 return JsonSerializer.Serialize(sList, Context.ListStreamSpec);
             }
+            else if (o is IEnumerable<MediaSegment> mList)
+            {
+                return JsonSerializer.Serialize(mList, Context.IEnumerableMediaSegment);
+            }
             return "{NOT SUPPORTED}";
+        }
+
+        public static string FormatFileSize(double fileSize)
+        {
+            return fileSize switch
+            {
+                < 0 => throw new ArgumentOutOfRangeException(nameof(fileSize)),
+                >= 1024 * 1024 * 1024 => string.Format("{0:########0.00}GB", (double)fileSize / (1024 * 1024 * 1024)),
+                >= 1024 * 1024 => string.Format("{0:####0.00}MB", (double)fileSize / (1024 * 1024)),
+                >= 1024 => string.Format("{0:####0.00}KB", (double)fileSize / 1024),
+                _ => string.Format("{0:####0.00}B", fileSize)
+            };
         }
 
         //此函数用于格式化输出时长  
@@ -55,7 +71,7 @@ namespace N_m3u8DL_RE.Common.Util
         public static string? FindExecutable(string name)
         {
             var fileExt = OperatingSystem.IsWindows() ? ".exe" : "";
-            var searchPath = new[] { Environment.CurrentDirectory, Environment.ProcessPath };
+            var searchPath = new[] { Environment.CurrentDirectory, Path.GetDirectoryName(Environment.ProcessPath) };
             var envPath = Environment.GetEnvironmentVariable("PATH")?.Split(Path.PathSeparator) ??
                           Array.Empty<string>();
             return searchPath.Concat(envPath).Select(p => Path.Combine(p, name + fileExt)).FirstOrDefault(File.Exists);

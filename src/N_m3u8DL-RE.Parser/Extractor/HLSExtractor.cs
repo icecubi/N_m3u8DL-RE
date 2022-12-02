@@ -22,6 +22,8 @@ namespace N_m3u8DL_RE.Parser.Extractor
         private string M3u8Url = string.Empty;
         private string BaseUrl = string.Empty;
         private string M3u8Content = string.Empty;
+        private bool MasterM3u8Flag = false;
+        private bool FirstFetchFlag = true;
 
         public ParserConfig ParserConfig { get; set; }
 
@@ -84,7 +86,8 @@ namespace N_m3u8DL_RE.Parser.Extractor
 
         private bool IsMaster()
         {
-            return M3u8Content.Contains(HLSTags.ext_x_stream_inf);
+            MasterM3u8Flag = M3u8Content.Contains(HLSTags.ext_x_stream_inf);
+            return MasterM3u8Flag;
         }
 
         private async Task<List<StreamSpec>> ParseMasterListAsync()
@@ -104,6 +107,7 @@ namespace N_m3u8DL_RE.Parser.Extractor
                 if (line.StartsWith(HLSTags.ext_x_stream_inf))
                 {
                     streamSpec = new();
+                    streamSpec.OriginalUrl = ParserConfig.OriginalUrl;
                     var bandwidth = string.IsNullOrEmpty(ParserUtil.GetAttribute(line, "AVERAGE-BANDWIDTH")) ? ParserUtil.GetAttribute(line, "BANDWIDTH") : ParserUtil.GetAttribute(line, "AVERAGE-BANDWIDTH");
                     streamSpec.Bandwidth = Convert.ToInt32(bandwidth);
                     streamSpec.Codecs = ParserUtil.GetAttribute(line, "CODECS");
@@ -236,13 +240,12 @@ namespace N_m3u8DL_RE.Parser.Extractor
 
             //当前的加密信息
             EncryptInfo currentEncryptInfo = new();
-            if (ParserConfig.CustomeKey != null)
-            {
-                currentEncryptInfo.Method = ParserConfig.CustomMethod ?? EncryptMethod.AES_128;
+            if (ParserConfig.CustomMethod != null)
+                currentEncryptInfo.Method = ParserConfig.CustomMethod.Value;
+            if (ParserConfig.CustomeKey != null && ParserConfig.CustomeKey.Length > 0) 
                 currentEncryptInfo.Key = ParserConfig.CustomeKey;
-                if (ParserConfig.CustomeIV != null)
-                    currentEncryptInfo.IV = ParserConfig.CustomeIV;
-            }
+            if (ParserConfig.CustomeIV != null && ParserConfig.CustomeIV.Length > 0)
+                currentEncryptInfo.IV = ParserConfig.CustomeIV;
             //上次读取到的加密行，#EXT-X-KEY:……
             string lastKeyLine = "";
 
@@ -292,7 +295,7 @@ namespace N_m3u8DL_RE.Parser.Extractor
                 //program date time
                 else if (line.StartsWith(HLSTags.ext_x_program_date_time))
                 {
-                    //
+                    segment.DateTime = DateTime.Parse(ParserUtil.GetAttribute(line));
                 }
                 //解析不连续标记，需要单独合并（timestamp不同）
                 else if (line.StartsWith(HLSTags.ext_x_discontinuity))
@@ -318,18 +321,6 @@ namespace N_m3u8DL_RE.Parser.Extractor
                 //解析KEY
                 else if (line.StartsWith(HLSTags.ext_x_key))
                 {
-                    //自定义KEY情况 不读取当前行的KEY信息.
-                    //对于IV，没自定义且当前行有IV的话 就用
-                    if (ParserConfig.CustomeKey != null)
-                    {
-                        currentEncryptInfo.Key = ParserConfig.CustomeKey;
-                        if (ParserConfig.CustomeIV == null && line.Contains("IV=0x"))
-                            currentEncryptInfo.IV = HexUtil.HexToBytes(ParserUtil.GetAttribute(line, "IV"));
-                        continue;
-                    }
-
-                    var iv = ParserUtil.GetAttribute(line, "IV");
-                    var method = ParserUtil.GetAttribute(line, "METHOD");
                     var uri = ParserUtil.GetAttribute(line, "URI");
                     var uri_last = ParserUtil.GetAttribute(lastKeyLine, "URI");
                     
@@ -381,6 +372,7 @@ namespace N_m3u8DL_RE.Parser.Extractor
                         playlist.MediaInit = new MediaSegment()
                         {
                             Url = PreProcessUrl(ParserUtil.CombineURL(BaseUrl, ParserUtil.GetAttribute(line, "URI"))),
+                            Index = -1, //便于排序
                         };
                         if (line.Contains("BYTERANGE"))
                         {
@@ -388,6 +380,13 @@ namespace N_m3u8DL_RE.Parser.Extractor
                             var (n, o) = ParserUtil.GetRange(p);
                             playlist.MediaInit.ExpectLength = n;
                             playlist.MediaInit.StartRange = o ?? 0L;
+                        }
+                        //是否有加密，有的话写入KEY和IV
+                        if (currentEncryptInfo.Method != EncryptMethod.NONE)
+                        {
+                            playlist.MediaInit.EncryptInfo.Method = currentEncryptInfo.Method;
+                            playlist.MediaInit.EncryptInfo.Key = currentEncryptInfo.Key;
+                            playlist.MediaInit.EncryptInfo.IV = currentEncryptInfo.IV ?? HexUtil.HexToBytes(Convert.ToString(segIndex, 16).PadLeft(32, '0'));
                         }
                     }
                     //遇到了其他的map，说明已经不是一个视频了，全部丢弃即可
@@ -508,7 +507,15 @@ namespace N_m3u8DL_RE.Parser.Extractor
             }
             else if (url.StartsWith("http"))
             {
-                (this.M3u8Content, url) = await HTTPUtil.GetWebSourceAndNewUrlAsync(url, ParserConfig.Headers);
+                try
+                {
+                    (this.M3u8Content, url) = await HTTPUtil.GetWebSourceAndNewUrlAsync(url, ParserConfig.Headers);
+                }
+                catch (HttpRequestException) when (url != ParserConfig.OriginalUrl)
+                {
+                    //当URL无法访问时，再请求原始URL
+                    (this.M3u8Content, url) = await HTTPUtil.GetWebSourceAndNewUrlAsync(ParserConfig.OriginalUrl, ParserConfig.Headers);
+                }
             }
 
             this.M3u8Url = url;
@@ -518,11 +525,35 @@ namespace N_m3u8DL_RE.Parser.Extractor
 
         public async Task FetchPlayListAsync(List<StreamSpec> lists)
         {
+            //首次加载不需要刷新URL
+            if (!FirstFetchFlag && MasterM3u8Flag)
+            {
+                //重新加载master m3u8, 刷新选中流的URL
+                await LoadM3u8FromUrlAsync(ParserConfig.Url);
+                var newStreams = await ParseMasterListAsync();
+                newStreams = newStreams.DistinctBy(p => p.Url).ToList();
+                foreach (var l in lists)
+                {
+                    var match = newStreams.Where(n => n.ToShortString() == l.ToShortString());
+                    if (match.Any())
+                    {
+                        Logger.DebugMarkUp($"{l.Url} => {match.First().Url}");
+                        l.Url = match.First().Url;
+                    }
+                }
+            }
+
             for (int i = 0; i < lists.Count; i++)
             {
                 //重新加载m3u8
                 await LoadM3u8FromUrlAsync(lists[i].Url!);
-                lists[i].Playlist = await ParseListAsync();
+
+                var newPlaylist = await ParseListAsync();
+                if (lists[i].Playlist?.MediaInit != null)
+                    lists[i].Playlist!.MediaParts = newPlaylist.MediaParts; //不更新init
+                else
+                    lists[i].Playlist = newPlaylist;
+
                 if (lists[i].MediaType == MediaType.SUBTITLES)
                 {
                     var a = lists[i].Playlist!.MediaParts.Any(p => p.MediaSegments.Any(m => m.Url.Contains(".ttml")));
@@ -535,6 +566,12 @@ namespace N_m3u8DL_RE.Parser.Extractor
                     lists[i].Extension = lists[i].Playlist!.MediaInit != null ? "m4s" : "ts";
                 }
             }
+        }
+
+        public async Task RefreshPlayListAsync(List<StreamSpec> streamSpecs)
+        {
+            FirstFetchFlag = false;
+            await FetchPlayListAsync(streamSpecs);
         }
     }
 }

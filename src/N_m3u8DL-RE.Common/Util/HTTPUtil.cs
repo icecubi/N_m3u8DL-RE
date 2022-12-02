@@ -1,21 +1,5 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Collections.Specialized;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Net;
-using System.Net.Cache;
-using System.Net.Http;
+﻿using System.Net;
 using System.Net.Http.Headers;
-using System.Security.Cryptography;
-using System.Text;
-using System.Text.Json;
-using System.Text.RegularExpressions;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Web;
 using N_m3u8DL_RE.Common.Log;
 using N_m3u8DL_RE.Common.Resource;
 
@@ -23,15 +7,16 @@ namespace N_m3u8DL_RE.Common.Util
 {
     public class HTTPUtil
     {
-
-        public static readonly HttpClient AppHttpClient = new(new HttpClientHandler
+        public static readonly HttpClientHandler HttpClientHandler = new()
         {
             AllowAutoRedirect = false,
             AutomaticDecompression = DecompressionMethods.All,
             ServerCertificateCustomValidationCallback = (sender, cert, chain, sslPolicyErrors) => true
-        })
+        };
+
+        public static readonly HttpClient AppHttpClient = new(HttpClientHandler)
         {
-            Timeout = TimeSpan.FromMinutes(2)
+            Timeout = TimeSpan.FromSeconds(100)
         };
 
         private static async Task<HttpResponseMessage> DoGetAsync(string url, Dictionary<string, string>? headers = null)
@@ -51,14 +36,28 @@ namespace N_m3u8DL_RE.Common.Util
             Logger.Debug(webRequest.Headers.ToString());
             //手动处理跳转，以免自定义Headers丢失
             var webResponse = await AppHttpClient.SendAsync(webRequest, HttpCompletionOption.ResponseHeadersRead);
-            if (webResponse.StatusCode == HttpStatusCode.Found || webResponse.StatusCode == HttpStatusCode.Moved)
+            if (((int)webResponse.StatusCode).ToString().StartsWith("30"))
             {
                 HttpResponseHeaders respHeaders = webResponse.Headers;
                 Logger.Debug(respHeaders.ToString());
-                if (respHeaders != null && respHeaders.Location != null && respHeaders.Location.AbsoluteUri != url)
+                if (respHeaders != null && respHeaders.Location != null)
                 {
-                    var redirectedUrl = respHeaders.Location.AbsoluteUri;
-                    return await DoGetAsync(redirectedUrl, headers);
+                    var redirectedUrl = "";
+                    if (!respHeaders.Location.IsAbsoluteUri)
+                    {
+                        Uri uri1 = new Uri(url);
+                        Uri uri2 = new Uri(uri1, respHeaders.Location);
+                        redirectedUrl = uri2.ToString();
+                    }
+                    else
+                    {
+                        redirectedUrl = respHeaders.Location.AbsoluteUri;
+                    }
+                    
+                    if (redirectedUrl != url)
+                    {
+                        return await DoGetAsync(redirectedUrl, headers);
+                    }
                 }
             }
             //手动将跳转后的URL设置进去, 用于后续取用
@@ -69,6 +68,10 @@ namespace N_m3u8DL_RE.Common.Util
 
         public static async Task<byte[]> GetBytesAsync(string url, Dictionary<string, string>? headers = null)
         {
+            if (url.StartsWith("file:"))
+            {
+                return await File.ReadAllBytesAsync(new Uri(url).LocalPath);
+            }
             byte[] bytes = new byte[0];
             var webResponse = await DoGetAsync(url, headers);
             bytes = await webResponse.Content.ReadAsByteArrayAsync();
@@ -91,6 +94,12 @@ namespace N_m3u8DL_RE.Common.Util
             return htmlCode;
         }
 
+        private static bool CheckMPEG2TS(HttpResponseMessage? webResponse)
+        {
+            var mediaType = webResponse?.Content.Headers.ContentType?.MediaType;
+            return mediaType == "video/ts" || mediaType == "video/mp2t";
+        }
+
         /// <summary>
         /// 获取网页源码和跳转后的URL
         /// </summary>
@@ -101,7 +110,14 @@ namespace N_m3u8DL_RE.Common.Util
         {
             string htmlCode = string.Empty;
             var webResponse = await DoGetAsync(url, headers);
-            htmlCode = await webResponse.Content.ReadAsStringAsync();
+            if (CheckMPEG2TS(webResponse))
+            {
+                htmlCode = ResString.ReLiveTs;
+            }
+            else
+            {
+                htmlCode = await webResponse.Content.ReadAsStringAsync();
+            }
             Logger.Debug(htmlCode);
             return (htmlCode, webResponse.Headers.Location != null ? webResponse.Headers.Location.AbsoluteUri : url);
         }

@@ -10,7 +10,7 @@ namespace N_m3u8DL_RE.Common.Log
 {
     public partial class Logger
     {
-        [RegexGenerator("{}")]
+        [GeneratedRegex("{}")]
         private static partial Regex VarsRepRegex();
 
         /// <summary>
@@ -132,6 +132,16 @@ namespace N_m3u8DL_RE.Common.Log
                 var write = GetCurrTime() + " " + "[underline red1]ERROR[/] : " + data;
                 HandleLog(write);
             }
+        }
+
+        public static void ErrorMarkUp(Exception exception)
+        {
+            string data = exception.Message.EscapeMarkup();
+            if (LogLevel >= LogLevel.ERROR)
+            {
+                data = exception.ToString().EscapeMarkup();
+            }
+            ErrorMarkUp(data);
         }
     }
 }

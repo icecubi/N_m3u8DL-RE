@@ -11,6 +11,7 @@ namespace N_m3u8DL_RE.Common.Entity
         public long Index { get; set; }
         public double Duration { get; set; }
         public string? Title { get; set; }
+        public DateTime? DateTime { get; set; }
 
         public long? StartRange { get; set; }
         public long? StopRange { get => (StartRange != null && ExpectLength != null) ? StartRange + ExpectLength - 1 : null; }
@@ -19,6 +20,8 @@ namespace N_m3u8DL_RE.Common.Entity
         public EncryptInfo EncryptInfo { get; set; } = new EncryptInfo();
 
         public string Url { get; set; }
+
+        public string? NameFromVar { get; set; } //MPD分段文件名
 
         public override bool Equals(object? obj)
         {
