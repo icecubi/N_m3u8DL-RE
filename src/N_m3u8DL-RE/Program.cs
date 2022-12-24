@@ -49,7 +49,12 @@ namespace N_m3u8DL_RE
         private static void Console_CancelKeyPress(object? sender, ConsoleCancelEventArgs e)
         {
             Logger.WarnMarkUp("Force Exit...");
-            try { Console.CursorVisible = true; } catch { }
+            try 
+            { 
+                Console.CursorVisible = true;
+                if (!OperatingSystem.IsWindows())
+                    System.Diagnostics.Process.Start("stty", "echo");
+            } catch { }
             Environment.Exit(0);
         }
 
@@ -68,8 +73,8 @@ namespace N_m3u8DL_RE
             //检测更新
             CheckUpdateAsync();
 
-            Logger.Info(CommandInvoker.VERSION_INFO);
             Logger.LogLevel = option.LogLevel;
+            Logger.Info(CommandInvoker.VERSION_INFO);
 
             if (option.UseSystemProxy == false)
             {

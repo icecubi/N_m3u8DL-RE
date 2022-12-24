@@ -110,7 +110,7 @@ namespace N_m3u8DL_RE.DownloadManager
             if (segments.Count() == 1) speedContainer.SingleSegment = true;
 
             var type = streamSpec.MediaType ?? Common.Enum.MediaType.VIDEO;
-            var dirName = $"{DownloaderConfig.MyOptions.SaveName ?? NowDateTime.ToString("yyyy-MM-dd_HH-mm-ss")}_{task.Id}_{streamSpec.GroupId}_{streamSpec.Codecs}_{streamSpec.Bandwidth}_{streamSpec.Language}";
+            var dirName = $"{DownloaderConfig.MyOptions.SaveName ?? NowDateTime.ToString("yyyy-MM-dd_HH-mm-ss")}_{task.Id}_{OtherUtil.GetValidFileName(streamSpec.GroupId ?? "", "-")}_{streamSpec.Codecs}_{streamSpec.Bandwidth}_{streamSpec.Language}";
             var tmpDir = Path.Combine(DownloaderConfig.MyOptions.TmpDir ?? Environment.CurrentDirectory, dirName);
             var saveDir = DownloaderConfig.MyOptions.SaveDir ?? Environment.CurrentDirectory;
             var saveName = DownloaderConfig.MyOptions.SaveName != null ? $"{DownloaderConfig.MyOptions.SaveName}.{streamSpec.Language}".TrimEnd('.') : dirName;
@@ -323,7 +323,7 @@ namespace N_m3u8DL_RE.DownloadManager
             //校验分片数量
             if (DownloaderConfig.MyOptions.CheckSegmentsCount && FileDic.Values.Any(s => s == null))
             {
-                Logger.WarnMarkUp(ResString.segmentCountCheckNotPass, totalCount, FileDic.Values.Where(s => s != null).Count());
+                Logger.ErrorMarkUp(ResString.segmentCountCheckNotPass, totalCount, FileDic.Values.Where(s => s != null).Count());
                 return false;
             }
 
@@ -621,7 +621,8 @@ namespace N_m3u8DL_RE.DownloadManager
                     FilePath = output,
                     LangCode = streamSpec.Language,
                     Description = streamSpec.Name,
-                    Mediainfos = mediaInfos
+                    Mediainfos = mediaInfos,
+                    MediaType = streamSpec.MediaType,
                 });
 
             return true;
@@ -640,10 +641,11 @@ namespace N_m3u8DL_RE.DownloadManager
                 new TaskDescriptionColumn() { Alignment = Justify.Left },
                 new ProgressBarColumn(),
                 new PercentageColumn(),
+                new DownloadStatusColumn(SpeedContainerDic),
                 new DownloadSpeedColumn(SpeedContainerDic), //速度计算
                 new RemainingTimeColumn(),
                 new SpinnerColumn(),
-            });
+            }) ;
 
             if (DownloaderConfig.MyOptions.MP4RealTimeDecryption && !DownloaderConfig.MyOptions.UseShakaPackager
                 && DownloaderConfig.MyOptions.Keys != null && DownloaderConfig.MyOptions.Keys.Length > 0)
@@ -654,7 +656,8 @@ namespace N_m3u8DL_RE.DownloadManager
                 //创建任务
                 var dic = SelectedSteams.Select(item =>
                 {
-                    var task = ctx.AddTask(item.ToShortString(), autoStart: false);
+                    var description = item.ToShortShortString();
+                    var task = ctx.AddTask(description, autoStart: false);
                     SpeedContainerDic[task.Id] = new SpeedContainer(); //速度计算
                     return (item, task);
                 }).ToDictionary(item => item.item, item => item.task);
@@ -667,6 +670,8 @@ namespace N_m3u8DL_RE.DownloadManager
                         var task = kp.Value;
                         var result = await DownloadStreamAsync(kp.Key, task, SpeedContainerDic[task.Id]);
                         Results[kp.Key] = result;
+                        //失败不再下载后续
+                        if (!result) break;
                     }
                 }
                 else
