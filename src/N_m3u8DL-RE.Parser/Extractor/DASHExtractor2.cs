@@ -1,4 +1,4 @@
-﻿using N_m3u8DL_RE.Common.Entity;
+using N_m3u8DL_RE.Common.Entity;
 using N_m3u8DL_RE.Common.Enum;
 using N_m3u8DL_RE.Common.Util;
 using N_m3u8DL_RE.Parser.Config;
@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Linq;
@@ -88,6 +89,11 @@ namespace N_m3u8DL_RE.Parser.Extractor
             var availabilityStartTime = mpdElement.Attribute("availabilityStartTime")?.Value;
             //在availabilityStartTime的前XX段时间，分片有效
             var timeShiftBufferDepth = mpdElement.Attribute("timeShiftBufferDepth")?.Value;
+            if (string.IsNullOrEmpty(timeShiftBufferDepth))
+            {
+                //如果没有 默认一分钟有效
+                timeShiftBufferDepth = "PT1M";
+            }
             //MPD发布时间
             var publishTime = mpdElement.Attribute("publishTime")?.Value;
             //MPD总时长
@@ -151,7 +157,7 @@ namespace N_m3u8DL_RE.Parser.Extractor
                         streamSpec.GroupId = representation.Attribute("id")?.Value;
                         streamSpec.Bandwidth = Convert.ToInt32(bandwidth?.Value ?? "0");
                         streamSpec.Codecs = representation.Attribute("codecs")?.Value ?? adaptationSet.Attribute("codecs")?.Value;
-                        streamSpec.Language = representation.Attribute("lang")?.Value ?? adaptationSet.Attribute("lang")?.Value;
+                        streamSpec.Language = FilterLanguage(representation.Attribute("lang")?.Value ?? adaptationSet.Attribute("lang")?.Value);
                         streamSpec.FrameRate = frameRate ?? GetFrameRate(representation);
                         streamSpec.Resolution = representation.Attribute("width")?.Value != null ? $"{representation.Attribute("width")?.Value}x{representation.Attribute("height")?.Value}" : null;
                         streamSpec.Url = MpdUrl;
@@ -161,6 +167,11 @@ namespace N_m3u8DL_RE.Parser.Extractor
                             "audio" => MediaType.AUDIO,
                             _ => null
                         };
+                        //特殊处理
+                        if (representation.Attribute("volumeAdjust") != null)
+                        {
+                            streamSpec.GroupId += "-" + representation.Attribute("volumeAdjust")?.Value;
+                        }
                         //推测后缀名
                         var mType = representation.Attribute("mimeType")?.Value ?? adaptationSet.Attribute("mimeType")?.Value;
                         if (mType != null)
@@ -178,10 +189,17 @@ namespace N_m3u8DL_RE.Parser.Extractor
                         if (role != null)
                         {
                             var v = role.Attribute("value")?.Value;
-                            if (v == "subtitle")
-                                streamSpec.MediaType = MediaType.SUBTITLES;
-                            if (mType != null && mType.Contains("ttml"))
-                                streamSpec.Extension = "ttml";
+                            if (Enum.TryParse(v, true, out RoleType roleType))
+                            {
+                                streamSpec.Role = roleType;
+
+                                if (roleType == RoleType.Subtitle)
+                                {
+                                    streamSpec.MediaType = MediaType.SUBTITLES;
+                                    if (mType != null && mType.Contains("ttml"))
+                                        streamSpec.Extension = "ttml";
+                                }
+                            }
                         }
                         streamSpec.Playlist.IsLive = isLive;
                         //设置刷新间隔 timeShiftBufferDepth / 2
@@ -202,7 +220,7 @@ namespace N_m3u8DL_RE.Parser.Extractor
                         {
                             streamSpec.PublishTime = DateTime.Parse(publishTime);
                         }
-                        
+
 
                         //第一种形式 SegmentBase
                         var segmentBaseElement = representation.Elements().Where(e => e.Name.LocalName == "SegmentBase").FirstOrDefault();
@@ -428,7 +446,7 @@ namespace N_m3u8DL_RE.Parser.Extractor
                         }
 
                         //判断加密情况
-                        if (adaptationSet.Elements().Concat(representation.Elements()).Any(e => e.Name.LocalName == "ContentProtection")) 
+                        if (adaptationSet.Elements().Concat(representation.Elements()).Any(e => e.Name.LocalName == "ContentProtection"))
                         {
                             if (streamSpec.Playlist.MediaInit != null)
                             {
@@ -442,7 +460,7 @@ namespace N_m3u8DL_RE.Parser.Extractor
 
                         //处理同一ID分散在不同Period的情况
                         var _index = streamList.FindIndex(_f => _f.PeriodId != streamSpec.PeriodId && _f.GroupId == streamSpec.GroupId && _f.Resolution == streamSpec.Resolution && _f.MediaType == streamSpec.MediaType);
-                        if (_index > -1) 
+                        if (_index > -1)
                         {
                             if (isLive)
                             {
@@ -450,17 +468,26 @@ namespace N_m3u8DL_RE.Parser.Extractor
                             }
                             else
                             {
-                                //点播，这种情况作为新的part出现
-                                var startIndex = streamList[_index].Playlist!.MediaParts.Last().MediaSegments.Last().Index + 1;
-                                var enumerator = streamSpec.Playlist.MediaParts[0].MediaSegments.GetEnumerator();
-                                while (enumerator.MoveNext())
+                                //点播，这种情况如果URL不同则作为新的part出现，否则仅把时间加起来
+                                var url1 = streamList[_index].Playlist!.MediaParts.Last().MediaSegments.Last().Url;
+                                var url2 = streamSpec.Playlist.MediaParts[0].MediaSegments.LastOrDefault()?.Url;
+                                if (url1 != url2)
                                 {
-                                    enumerator.Current.Index += startIndex;
+                                    var startIndex = streamList[_index].Playlist!.MediaParts.Last().MediaSegments.Last().Index + 1;
+                                    var enumerator = streamSpec.Playlist.MediaParts[0].MediaSegments.GetEnumerator();
+                                    while (enumerator.MoveNext())
+                                    {
+                                        enumerator.Current.Index += startIndex;
+                                    }
+                                    streamList[_index].Playlist!.MediaParts.Add(new MediaPart()
+                                    {
+                                        MediaSegments = streamSpec.Playlist.MediaParts[0].MediaSegments
+                                    });
                                 }
-                                streamList[_index].Playlist!.MediaParts.Add(new MediaPart()
+                                else
                                 {
-                                    MediaSegments = streamSpec.Playlist.MediaParts[0].MediaSegments
-                                });
+                                    streamList[_index].Playlist!.MediaParts.Last().MediaSegments.Last().Duration += streamSpec.Playlist.MediaParts[0].MediaSegments.Sum(x => x.Duration);
+                                }
                             }
                         }
                         else
@@ -494,16 +521,28 @@ namespace N_m3u8DL_RE.Parser.Extractor
                 {
                     if (aL.Any())
                     {
-                        item.AudioId = aL.First().GroupId;
+                        item.AudioId = aL.OrderByDescending(x => x.Bandwidth).First().GroupId;
                     }
                     if (sL.Any())
                     {
-                        item.SubtitleId = sL.First().GroupId;
+                        item.SubtitleId = sL.OrderByDescending(x => x.Bandwidth).First().GroupId;
                     }
                 }
             }
 
             return streamList;
+        }
+
+        /// <summary>
+        /// 如果有非法字符 返回und
+        /// </summary>
+        /// <param name="v"></param>
+        /// <returns></returns>
+        private string? FilterLanguage(string? v)
+        {
+            if (v == null) return null;
+            if (Regex.IsMatch(v, "^[\\w_\\-\\d]+$")) return v;
+            return "und";
         }
 
         public async Task RefreshPlayListAsync(List<StreamSpec> streamSpecs)

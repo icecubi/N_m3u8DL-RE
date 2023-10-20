@@ -85,7 +85,7 @@ namespace N_m3u8DL_RE.Util
             else
                 div = 200;
 
-            string outputName = Path.GetDirectoryName(files[0]) + "\\T";
+            string outputName = Path.Combine(Path.GetDirectoryName(files[0])!, "T");
             int index = 0; //序号
 
             //按照div的容量分割为小数组
@@ -110,7 +110,7 @@ namespace N_m3u8DL_RE.Util
 
         public static bool MergeByFFmpeg(string binary, string[] files, string outputPath, string muxFormat, bool useAACFilter,
             bool fastStart = false,
-            bool writeDate = true, string poster = "", string audioName = "", string title = "",
+            bool writeDate = true, bool useConcatDemuxer = false, string poster = "", string audioName = "", string title = "",
             string copyright = "", string comment = "", string encodingTool = "", string recTime = "")
         {
             //改为绝对路径
@@ -118,16 +118,29 @@ namespace N_m3u8DL_RE.Util
 
             string dateString = string.IsNullOrEmpty(recTime) ? DateTime.Now.ToString("o") : recTime;
 
-            StringBuilder command = new StringBuilder("-loglevel warning -nostdin -i concat:\"");
+            StringBuilder command = new StringBuilder("-loglevel warning -nostdin ");
             string ddpAudio = string.Empty;
             string addPoster = "-map 1 -c:v:1 copy -disposition:v:1 attached_pic";
             ddpAudio = (File.Exists($"{Path.GetFileNameWithoutExtension(outputPath + ".mp4")}.txt") ? File.ReadAllText($"{Path.GetFileNameWithoutExtension(outputPath + ".mp4")}.txt") : "");
             if (!string.IsNullOrEmpty(ddpAudio)) useAACFilter = false;
 
-            foreach (string t in files)
+            if (useConcatDemuxer)
             {
-                command.Append(Path.GetFileName(t) + "|");
+                // 使用 concat demuxer合并
+                var text = string.Join(Environment.NewLine, files.Select(f => $"file '{f}'"));
+                var tempFile = Path.GetTempFileName();
+                File.WriteAllText(tempFile, text);
+                command.Append($" -f concat -safe 0 -i \"{tempFile}");
             }
+            else
+            {
+                command.Append(" -i concat:\"");
+                foreach (string t in files)
+                {
+                    command.Append(Path.GetFileName(t) + "|");
+                }
+            }
+
 
             switch (muxFormat.ToUpper())
             {
@@ -191,10 +204,12 @@ namespace N_m3u8DL_RE.Util
                 command.Append($" -map {i} ");
             }
 
+            var srt = files.Any(x => x.FilePath.EndsWith(".srt"));
+
             if (mp4)
                 command.Append($" -strict unofficial -c:a copy -c:v copy -c:s mov_text "); //mp4不支持vtt/srt字幕，必须转换格式
             else
-                command.Append($" -strict unofficial -c copy ");
+                command.Append($" -strict unofficial -c:a copy -c:v copy -c:s {(srt ? "srt" : "webvtt")} ");
 
             //CLEAN
             command.Append(" -map_metadata -1 ");
@@ -221,7 +236,23 @@ namespace N_m3u8DL_RE.Util
                     streamIndex++;
             }
 
-            if(dateinfo) command.Append($" -metadata date=\"{dateString}\" ");
+            var videoTracks = files.Where(x => x.MediaType != Common.Enum.MediaType.AUDIO && x.MediaType != Common.Enum.MediaType.SUBTITLES);
+            var audioTracks = files.Where(x => x.MediaType == Common.Enum.MediaType.AUDIO);
+            var subTracks = files.Where(x => x.MediaType == Common.Enum.MediaType.AUDIO);
+            if (videoTracks.Any()) command.Append(" -disposition:v:0 default ");
+            //字幕都不设置默认
+            if (subTracks.Any()) command.Append(" -disposition:s 0 ");
+            if (audioTracks.Any())
+            {
+                //音频除了第一个音轨 都不设置默认
+                command.Append(" -disposition:a:0 default ");
+                for (int i = 1; i < audioTracks.Count(); i++)
+                {
+                    command.Append($" -disposition:a:{i} 0 ");
+                }
+            }
+
+            if (dateinfo) command.Append($" -metadata date=\"{dateString}\" ");
             command.Append($" -ignore_unknown -copy_unknown ");
             command.Append($" \"{outputPath}.{ext}\"");
 
@@ -236,12 +267,24 @@ namespace N_m3u8DL_RE.Util
 
             command.Append(" --no-chapters ");
 
+            var dFlag = false;
+
             //LANG and NAME
             for (int i = 0; i < files.Length; i++)
             {
                 //转换语言代码
                 LanguageCodeUtil.ConvertLangCodeAndDisplayName(files[i]);
                 command.Append($" --language 0:\"{files[i].LangCode ?? "und"}\" ");
+                //字幕都不设置默认
+                if (files[i].MediaType == Common.Enum.MediaType.SUBTITLES)
+                    command.Append($" --default-track 0:no ");
+                //音频除了第一个音轨 都不设置默认
+                if (files[i].MediaType == Common.Enum.MediaType.AUDIO)
+                {
+                    if (dFlag)
+                        command.Append($" --default-track 0:no ");
+                    dFlag = true;
+                }
                 if (!string.IsNullOrEmpty(files[i].Description))
                     command.Append($" --track-name 0:\"{files[i].Description}\" ");
                 command.Append($" \"{files[i].FilePath}\" ");
