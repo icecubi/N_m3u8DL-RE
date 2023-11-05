@@ -1,0 +1,3 @@
+          owner: fw876 # fork 的上游仓库 user
+          head: master # fork 的上游仓库 branch
+          base: master # 本地仓库 branch
