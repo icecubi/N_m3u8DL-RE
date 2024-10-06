@@ -4,6 +4,8 @@
 [![img](https://img.shields.io/github/stars/nilaoda/N_m3u8DL-RE?label=%E7%82%B9%E8%B5%9E)](https://github.com/nilaoda/N_m3u8DL-RE)  [![img](https://img.shields.io/github/last-commit/nilaoda/N_m3u8DL-RE?label=%E6%9C%80%E8%BF%91%E6%8F%90%E4%BA%A4)](https://github.com/nilaoda/N_m3u8DL-RE)  [![img](https://img.shields.io/github/release/nilaoda/N_m3u8DL-RE?label=%E6%9C%80%E6%96%B0%E7%89%88%E6%9C%AC)](https://github.com/nilaoda/N_m3u8DL-RE/releases)  [![img](https://img.shields.io/github/license/nilaoda/N_m3u8DL-RE?label=%E8%AE%B8%E5%8F%AF%E8%AF%81)](https://github.com/nilaoda/N_m3u8DL-RE)   [![img](https://img.shields.io/github/downloads/nilaoda/N_m3u8DL-RE/total?label=%E4%B8%8B%E8%BD%BD%E9%87%8F)](https://github.com/nilaoda/N_m3u8DL-RE/releases)
 
 
+遇到 BUG 请首先确认软件是否为最新版本（如果是 Release 版本，建议到 [Actions](https://github.com/nilaoda/N_m3u8DL-RE/actions) 页面下载最新自动构建版本后查看问题是否已经被修复），如果确认版本最新且问题依旧存在，可以到 [Issues](https://github.com/nilaoda/N_m3u8DL-RE/issues) 中查找是否有人遇到过相关问题，没有的话再进行询问。
+
 
 ---
 
@@ -12,10 +14,10 @@
 Arch Linux 可以从 AUR 获取：[n-m3u8dl-re-bin](https://aur.archlinux.org/packages/n-m3u8dl-re-bin)、[n-m3u8dl-re-git](https://aur.archlinux.org/packages/n-m3u8dl-re-git)
 
 ```bash
-# Arch Linux 及其衍生版安装 N_m3u8DL-RE 发行版
+# Arch Linux 及其衍生版安装 N_m3u8DL-RE 发行版 (该源非本人维护)
 yay -Syu n-m3u8dl-re-bin
 
-# Arch Linux 及其衍生版安装 N_m3u8DL-RE 开发版
+# Arch Linux 及其衍生版安装 N_m3u8DL-RE 开发版 (该源非本人维护)
 yay -Syu n-m3u8dl-re-git
 ```
 ---
@@ -23,7 +25,7 @@ yay -Syu n-m3u8dl-re-git
 # 命令行参数
 ```
 Description:
-  N_m3u8DL-RE (Beta version) 20230628
+  N_m3u8DL-RE (Beta version) 20240630
 
 Usage:
   N_m3u8DL-RE <input> [options]
@@ -36,13 +38,16 @@ Options:
   --save-dir <save-dir>                    设置输出目录
   --save-name <save-name>                  设置保存文件名
   --base-url <base-url>                    设置BaseURL
-  --thread-count <number>                  设置下载线程数 [default: 16]
+  --thread-count <number>                  设置下载线程数 [default: 本机CPU线程数]
   --download-retry-count <number>          每个分片下载异常时的重试次数 [default: 3]
+  --force-ansi-console                     强制认定终端为支持ANSI且可交互的终端
+  --no-ansi-color                          去除ANSI颜色
   --auto-select                            自动选择所有类型的最佳轨道 [default: False]
   --skip-merge                             跳过合并分片 [default: False]
   --skip-download                          跳过下载 [default: False]
   --check-segments-count                   检测实际下载的分片数量和预期数量是否匹配 [default: True]
   --binary-merge                           二进制合并 [default: False]
+  --use-ffmpeg-concat-demuxer              使用 ffmpeg 合并时，使用 concat 分离器而非 concat 协议 [default: False]
   --del-after-done                         完成后删除临时文件 [default: True]
   --no-date-info                           混流时不写入日期信息 [default: False]
   --no-log                                 关闭日志文件输出 [default: False]
@@ -64,6 +69,7 @@ Options:
   --decryption-binary-path <PATH>          MP4解密所用工具的全路径, 例如 C:\Tools\mp4decrypt.exe
   --use-shaka-packager                     解密时使用shaka-packager替代mp4decrypt [default: False]
   --mp4-real-time-decryption               实时解密MP4分片 [default: False]
+  -R, --max-speed <SPEED>                  设置限速，单位支持 Mbps 或 Kbps，如：15M 100K
   -M, --mux-after-done <OPTIONS>           所有工作完成时尝试混流分离的音视频. 输入 "--morehelp mux-after-done" 以查看详细信息
   --custom-hls-method <METHOD>             指定HLS加密方式 (AES_128|AES_128_ECB|CENC|CHACHA20|NONE|SAMPLE_AES|SAMPLE_AES_CTR|UNKNOWN)
   --custom-hls-key <FILE|HEX|BASE64>       指定HLS解密KEY. 可以是文件, HEX或Base64
@@ -79,6 +85,7 @@ Options:
   --live-fix-vtt-by-audio                  通过读取音频文件的起始时间修正VTT字幕 [default: False]
   --live-record-limit <HH:mm:ss>           录制直播时的录制时长限制
   --live-wait-time <SEC>                   手动设置直播列表刷新间隔
+  --live-take-count <NUM>                  手动设置录制直播时首次获取分片的数量 [default: 16]
   --mux-import <OPTIONS>                   混流时引入外部媒体文件. 输入 "--morehelp mux-import" 以查看详细信息
   -sv, --select-video <OPTIONS>            通过正则表达式选择符合要求的视频流. 输入 "--morehelp select-video" 以查看详细信息
   -sa, --select-audio <OPTIONS>            通过正则表达式选择符合要求的音频流. 输入 "--morehelp select-audio" 以查看详细信息
@@ -86,6 +93,7 @@ Options:
   -dv, --drop-video <OPTIONS>              通过正则表达式去除符合要求的视频流.
   -da, --drop-audio <OPTIONS>              通过正则表达式去除符合要求的音频流.
   -ds, --drop-subtitle <OPTIONS>           通过正则表达式去除符合要求的字幕流.
+  --ad-keyword <REG>                       设置广告分片的URL关键字(正则表达式)
   --morehelp <OPTION>                      查看某个选项的详细帮助信息
   --version                                Show version information
   -?, -h, --help                           Show help and usage information
@@ -139,7 +147,7 @@ More Help:
 
 通过正则表达式选择符合要求的视频流. 你能够以:分隔形式指定如下参数:
 
-id=REGEX:lang=REGEX:name=REGEX:codec=REGEX:res=REGEX:frame=REGEX
+id=REGEX:lang=REGEX:name=REGEX:codecs=REGEX:res=REGEX:frame=REGEX
 segsMin=number:segsMax=number:ch=REGEX:range=REGEX:url=REGEX
 plistDurMin=hms:plistDurMax=hms:for=FOR
 
@@ -149,7 +157,7 @@ plistDurMin=hms:plistDurMax=hms:for=FOR
 # 选择最佳视频
 -sv best
 # 选择4K+HEVC视频
--sv res="3840*":codec=hvc1:for=best
+-sv res="3840*":codecs=hvc1:for=best
 # 选择长度大于1小时20分钟30秒的视频
 -sv plistDurMin="1h20m30s":for=best
 ```
